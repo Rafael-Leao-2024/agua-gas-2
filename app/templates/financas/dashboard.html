@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Financeiro - Água & Gás{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho -->
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+    <h1 class="h3 mb-0">
+        <i class="bi bi-cash-stack me-2 text-primary"></i>
+        Dashboard Financeiro
+    </h1>
+    <span class="text-muted small" id="data-atual"></span>
+</div>
+
+<!-- Cards de resumo do dia -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card bg-primary bg-opacity-25 border-primary border-opacity-25">
+            <div class="card-body p-3">
+                <small class="text-primary text-uppercase">Total Dia</small>
+                <h3 class="mb-0 text-primary" id="total-dia">R$ 0</h3>
+                <small class="text-muted" id="qtd-total-dia">0 pedidos</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-6 col-md-3">
+        <div class="card bg-success bg-opacity-25 border-success border-opacity-25">
+            <div class="card-body p-3">
+                <small class="text-success text-uppercase">Pagos Dia</small>
+                <h3 class="mb-0 text-success" id="pagos-dia">R$ 0</h3>
+                <small class="text-muted" id="qtd-pagos-dia">0 pedidos</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-6 col-md-3">
+        <div class="card bg-warning bg-opacity-25 border-warning border-opacity-25">
+            <div class="card-body p-3">
+                <small class="text-warning text-uppercase">Pendentes Dia</small>
+                <h3 class="mb-0 text-warning" id="pendentes-dia">R$ 0</h3>
+                <small class="text-muted" id="qtd-pendentes-dia">0 pedidos</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-6 col-md-3">
+        <div class="card bg-info bg-opacity-25 border-info border-opacity-25">
+            <div class="card-body p-3">
+                <small class="text-info text-uppercase">Mês</small>
+                <h3 class="mb-0 text-info" id="total-mes">R$ 0</h3>
+                <small class="text-muted" id="qtd-mes">0 pedidos</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botões de acesso rápido -->
+<div class="row g-2 mb-4">
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('financas.pendentes') }}" class="btn btn-outline-warning w-100">
+            <i class="bi bi-hourglass-split me-2"></i>Pendentes
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('financas.pagos') }}" class="btn btn-outline-success w-100">
+            <i class="bi bi-check-circle me-2"></i>Pagos
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('financas.mensal') }}" class="btn btn-outline-info w-100">
+            <i class="bi bi-calendar-month me-2"></i>Mensal
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('financas.devedores') }}" class="btn btn-outline-danger w-100">
+            <i class="bi bi-exclamation-triangle me-2"></i>Devedores
+        </a>
+    </div>
+</div>
+
+<!-- Últimos pendentes e pagos -->
+<div class="row g-4">
+    <!-- Pendentes Recentes -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-hourglass-split text-warning me-2"></i>
+                    Pendentes Recentes
+                </h5>
+                <a href="{{ url_for('financas.pendentes') }}" class="btn btn-sm btn-outline-warning">
+                    Ver todos
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush bg-transparent" id="lista-pendentes-recentes">
+                    <div class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                        Carregando...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pagos Recentes -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-check-circle text-success me-2"></i>
+                    Pagos Recentes
+                </h5>
+                <a href="{{ url_for('financas.pagos') }}" class="btn btn-sm btn-outline-success">
+                    Ver todos
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush bg-transparent" id="lista-pagos-recentes">
+                    <div class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                        Carregando...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('data-atual').textContent = new Date().toLocaleDateString('pt-BR', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+});
+
+function carregarResumoDiario() {
+    fetch('/financas/api/resumo-diario')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('total-dia').textContent = 'R$ ' + data.total_dia.toFixed(2).replace('.', ',');
+            document.getElementById('pagos-dia').textContent = 'R$ ' + data.pagos_dia.toFixed(2).replace('.', ',');
+            document.getElementById('pendentes-dia').textContent = 'R$ ' + data.pendentes_dia.toFixed(2).replace('.', ',');
+            
+            document.getElementById('qtd-total-dia').textContent = data.qtd_total + ' pedidos';
+            document.getElementById('qtd-pagos-dia').textContent = data.qtd_pagos + ' pedidos';
+            document.getElementById('qtd-pendentes-dia').textContent = data.qtd_pendentes + ' pedidos';
+        });
+}
+
+function carregarResumoMensal() {
+    fetch('/financas/api/resumo-mensal')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('total-mes').textContent = 'R$ ' + data.total_mes.toFixed(2).replace('.', ',');
+            document.getElementById('qtd-mes').textContent = 'Total do mês';
+        });
+}
+
+function carregarPendentesRecentes() {
+    fetch('/financas/api/pedidos-pendentes?filtro=todos&limite=5')
+        .then(response => response.json())
+        .then(pedidos => {
+            const container = document.getElementById('lista-pendentes-recentes');
+            container.innerHTML = '';
+            
+            if (pedidos.length === 0) {
+                container.innerHTML = '<div class="text-center py-4 text-muted">Nenhum pendente</div>';
+                return;
+            }
+            
+            pedidos.slice(0, 5).forEach(p => {
+                container.innerHTML += `
+                    <div class="list-group-item bg-transparent border-secondary">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted">${p.codigo}</small>
+                                <h6 class="mb-0">${p.cliente}</h6>
+                                <small>${p.produto} - ${p.volumes}x</small>
+                            </div>
+                            <div class="text-end">
+                                <strong class="text-warning">R$ ${p.valor.toFixed(2)}</strong>
+                                <br>
+                                <button class="btn btn-sm btn-success mt-1" onclick="marcarPago(${p.id})">
+                                    <i class="bi bi-check"></i>Pagar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+}
+
+function carregarPagosRecentes() {
+    fetch('/financas/api/pedidos-pagos?filtro=todos&limite=5')
+        .then(response => response.json())
+        .then(pedidos => {
+            const container = document.getElementById('lista-pagos-recentes');
+            container.innerHTML = '';
+            
+            if (pedidos.length === 0) {
+                container.innerHTML = '<div class="text-center py-4 text-muted">Nenhum pago</div>';
+                return;
+            }
+            
+            pedidos.slice(0, 5).forEach(p => {
+                container.innerHTML += `
+                    <div class="list-group-item bg-transparent border-secondary">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted">${p.codigo}</small>
+                                <h6 class="mb-0">${p.cliente}</h6>
+                                <small>${p.produto} - ${p.volumes}x</small>
+                            </div>
+                            <div class="text-end">
+                                <strong class="text-success">R$ ${p.valor.toFixed(2)}</strong>
+                                <br>
+                                <small class="text-muted">${p.forma_pagamento}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+}
+
+function marcarPago(pedidoId) {
+    if (confirm('Confirmar pagamento?')) {
+        fetch(`/financas/api/marcar-pago/${pedidoId}`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Pedido marcado como pago!');
+                    carregarPendentesRecentes();
+                    carregarPagosRecentes();
+                    carregarResumoDiario();
+                }
+            });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    carregarResumoDiario();
+    carregarResumoMensal();
+    carregarPendentesRecentes();
+    carregarPagosRecentes();
+    
+    setInterval(() => {
+        carregarResumoDiario();
+        carregarResumoMensal();
+    }, 30000);
+});
+</script>
+{% endblock %}

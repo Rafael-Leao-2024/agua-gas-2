@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Clientes Devedores - Água & Gás{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho -->
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+    <h1 class="h3 mb-0">
+        <i class="bi bi-exclamation-triangle text-danger me-2"></i>
+        Clientes Devedores (Fiado)
+    </h1>
+</div>
+
+<!-- Cards para mobile -->
+<div class="d-md-none" id="cards-devedores">
+    <div class="text-center py-4">
+        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+        Carregando...
+    </div>
+</div>
+
+<!-- Tabela para desktop -->
+<div class="d-none d-md-block">
+    <div class="card">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Qtd. Pedidos</th>
+                        <th>Total Devedor</th>
+                        <th>Último Pedido</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-devedores">
+                    <tr>
+                        <td colspan="5" class="text-center py-4">
+                            <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                            Carregando...
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot class="table-dark">
+                    <tr>
+                        <td colspan="2" class="text-end"><strong>Total Geral:</strong></td>
+                        <td><strong id="total-geral">R$ 0,00</strong></td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function carregarDevedores() {
+    fetch('/financas/api/devedores')
+        .then(response => response.json())
+        .then(clientes => {
+            const tbody = document.getElementById('tabela-devedores');
+            const cardsContainer = document.getElementById('cards-devedores');
+            let totalGeral = 0;
+            
+            tbody.innerHTML = '';
+            cardsContainer.innerHTML = '';
+            
+            if (clientes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Nenhum cliente devedor</td></tr>';
+                cardsContainer.innerHTML = '<div class="text-center py-4 text-muted">Nenhum cliente devedor</div>';
+                document.getElementById('total-geral').textContent = 'R$ 0,00';
+                return;
+            }
+            
+            clientes.forEach(c => {
+                totalGeral += c.total;
+                
+                // Linha da tabela
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${c.cliente}</strong></td>
+                        <td>${c.qtd_pedidos} pedidos</td>
+                        <td class="text-danger fw-bold">R$ ${c.total.toFixed(2)}</td>
+                        <td>${c.ultimo_pedido}</td>
+                        <td>
+                            <button class="btn btn-sm btn-warning" onclick="verPedidos('${c.cliente}')">
+                                Ver pedidos
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                
+                // Card mobile
+                cardsContainer.innerHTML += `
+                    <div class="card mb-3 border-danger">
+                        <div class="card-body">
+                            <h5 class="card-title">${c.cliente}</h5>
+                            <p class="mb-1">${c.qtd_pedidos} pedidos pendentes</p>
+                            <p class="mb-2 text-danger fw-bold fs-5">R$ ${c.total.toFixed(2)}</p>
+                            <small class="text-muted">Último: ${c.ultimo_pedido}</small>
+                            <button class="btn btn-sm btn-warning w-100 mt-2" onclick="verPedidos('${c.cliente}')">
+                                Ver pedidos
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('total-geral').textContent = `R$ ${totalGeral.toFixed(2)}`;
+        });
+}
+
+function verPedidos(cliente) {
+    // Redireciona para a lista de pedidos com filtro de cliente
+    window.location.href = `/pedidos/?cliente=${encodeURIComponent(cliente)}&forma=Fiado&status=pendente`;
+}
+
+document.addEventListener('DOMContentLoaded', carregarDevedores);
+</script>
+{% endblock %}

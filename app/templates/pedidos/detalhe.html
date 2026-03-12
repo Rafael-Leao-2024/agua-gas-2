@@ -1,0 +1,509 @@
+{% extends "base.html" %}
+
+{% block title %}Pedido #{{ pedido.codigo_acompanhamento }} - Água & Gás{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho com navegação -->
+<div class="d-flex align-items-center mb-4">
+    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+        <h1 class="h3 mb-1">
+            <i class="bi bi-receipt me-2 text-primary"></i>
+            Pedido #{{ pedido.codigo_acompanhamento }}
+        </h1>
+        <span class="small text-muted">Detalhes completos do pedido</span>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Coluna principal com informações do pedido -->
+    <div class="col-12 col-lg-8">
+        <!-- Card do Cliente -->
+        <div class="card mb-4">
+            <div class="card-header bg-transparent d-flex align-items-center">
+                <i class="bi bi-person-circle me-2 text-primary"></i>
+                <h5 class="mb-0">Informações do Cliente</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <div class="d-flex">
+                            <i class="bi bi-person text-muted me-2" style="width: 20px;"></i>
+                            <div>
+                                <small class="text-muted d-block">Nome</small>
+                                <strong>{{ pedido.nome_cliente }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="d-flex">
+                            <i class="bi bi-geo-alt text-muted me-2" style="width: 20px;"></i>
+                            <div>
+                                <small class="text-muted d-block">Endereço</small>
+                                <strong>{{ pedido.endereco_cliente }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card do Pedido -->
+        <div class="card mb-4">
+            <div class="card-header bg-transparent d-flex align-items-center">
+                <i class="bi bi-box-seam me-2 text-primary"></i>
+                <h5 class="mb-0">Detalhes do Pedido</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-6 col-md-3">
+                        <div class="text-center p-3 bg-dark bg-opacity-50 rounded">
+                            <i class="bi bi-cube fs-4 text-primary"></i>
+                            <small class="text-muted d-block">Produto</small>
+                            <strong>{{ pedido.produto }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-center p-3 bg-dark bg-opacity-50 rounded">
+                            <i class="bi bi-stack fs-4 text-info"></i>
+                            <small class="text-muted d-block">Volumes</small>
+                            <strong>{{ pedido.volumes }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-center p-3 bg-dark bg-opacity-50 rounded">
+                            <i class="bi bi-cash-stack fs-4 text-success"></i>
+                            <small class="text-muted d-block">Valor Total</small>
+                            <strong>R$ {{ "%.2f"|format(pedido.valor_total) }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-center p-3 bg-dark bg-opacity-50 rounded">
+                            <i class="bi bi-credit-card fs-4 text-warning"></i>
+                            <small class="text-muted d-block">Pagamento</small>
+                            <span class="badge {% if pedido.status_pagamento == 'pago' %}bg-success{% else %}bg-warning{% endif %} mt-1">
+                                {{ pedido.forma_pagamento }} - {{ pedido.status_pagamento }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline de Status -->
+        <div class="card mb-4">
+            <div class="card-header bg-transparent d-flex align-items-center">
+                <i class="bi bi-clock-history me-2 text-primary"></i>
+                <h5 class="mb-0">Linha do Tempo do Pedido</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <!-- Pedido Criado -->
+                    <div class="timeline-item completed">
+                        <div class="timeline-icon bg-primary">
+                            <i class="bi bi-plus-circle"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                <h6 class="mb-1">Pedido Criado</h6>
+                                <small class="text-muted">{{ pedido.data_criacao.strftime('%d/%m/%Y às %H:%M') }}</small>
+                            </div>
+                            <p class="small text-muted mb-0">
+                                <i class="bi bi-person me-1"></i> {{ pedido.usuario_criador.nome if pedido.usuario_criador else 'Sistema' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Em Processo -->
+                    <div class="timeline-item {% if pedido.data_processo %}completed{% else %}pending{% endif %}">
+                        <div class="timeline-icon {% if pedido.data_processo %}bg-warning{% else %}bg-secondary{% endif %}">
+                            <i class="bi bi-clock"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                <h6 class="mb-1">Em Processo</h6>
+                                {% if pedido.data_processo %}
+                                    <small class="text-muted">{{ pedido.data_processo.strftime('%d/%m/%Y às %H:%M') }}</small>
+                                {% endif %}
+                            </div>
+                            {% if pedido.data_processo %}
+                                <p class="small text-muted mb-0">
+                                    <i class="bi bi-person me-1"></i> 
+                                    {% set usuario_processo = pedido.entregas|selectattr('data_hora', 'equalto', pedido.data_processo)|first %}
+                                    {% if usuario_processo %}
+                                        {{ usuario_processo.entregador.nome }}
+                                    {% else %}
+                                        {{ pedido.usuario_criador.nome }}
+                                    {% endif %}
+                                </p>
+                            {% else %}
+                                <p class="small text-muted mb-0">Aguardando processamento</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- A Caminho -->
+                    <div class="timeline-item {% if pedido.data_caminho %}completed{% else %}pending{% endif %}">
+                        <div class="timeline-icon {% if pedido.data_caminho %}bg-info{% else %}bg-secondary{% endif %}">
+                            <i class="bi bi-truck"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                <h6 class="mb-1">A Caminho</h6>
+                                {% if pedido.data_caminho %}
+                                    <small class="text-muted">{{ pedido.data_caminho.strftime('%d/%m/%Y às %H:%M') }}</small>
+                                {% endif %}
+                            </div>
+                            {% if pedido.data_caminho %}
+                                <p class="small text-muted mb-0">
+                                    <i class="bi bi-person me-1"></i>
+                                    {% set usuario_caminho = pedido.entregas|selectattr('data_hora', 'equalto', pedido.data_caminho)|first %}
+                                    {% if usuario_caminho %}
+                                        {{ usuario_caminho.entregador.nome }}
+                                    {% else %}
+                                        {{ pedido.usuario_criador.nome }}
+                                    {% endif %}
+                                </p>
+                            {% else %}
+                                <p class="small text-muted mb-0">Pedido aguardando saída</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Entregue -->
+                    <div class="timeline-item {% if pedido.data_entrega %}completed{% else %}pending{% endif %}">
+                        <div class="timeline-icon {% if pedido.data_entrega %}bg-success{% else %}bg-secondary{% endif %}">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                <h6 class="mb-1">Entregue</h6>
+                                {% if pedido.data_entrega %}
+                                    <small class="text-muted">{{ pedido.data_entrega.strftime('%d/%m/%Y às %H:%M') }}</small>
+                                {% endif %}
+                            </div>
+                            {% if pedido.data_entrega %}
+                                <p class="small text-muted mb-0">
+                                    <i class="bi bi-person me-1"></i>
+                                    {% set usuario_entrega = pedido.entregas|selectattr('data_hora', 'equalto', pedido.data_entrega)|first %}
+                                    {% if usuario_entrega %}
+                                        {{ usuario_entrega.entregador.nome }}
+                                    {% else %}
+                                        {{ pedido.usuario_criador.nome }}
+                                    {% endif %}
+                                </p>
+                            {% else %}
+                                <p class="small text-muted mb-0">Pedido ainda não entregue</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coluna lateral com ações e histórico -->
+    <div class="col-12 col-lg-4">
+        <!-- Card de Ações Rápidas -->
+        <div class="card mb-4">
+            <div class="card-header bg-transparent d-flex align-items-center">
+                <i class="bi bi-lightning-charge me-2 text-primary"></i>
+                <h5 class="mb-0">Ações Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <!-- Atualizar Status -->
+                     <!-- Dentro do card de Ações Rápidas, antes do Editar Pedido -->
+                    <a href="{{ url_for('pedidos.editar_pagamento', pedido_id=pedido.id) }}" 
+                    class="btn btn-outline-warning mb-2">
+                        <i class="bi bi-credit-card me-2"></i>
+                        Alterar Pagamento
+                    </a>
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">Alterar Status</label>
+                        <select class="form-select bg-dark text-light border-secondary w-100" 
+                                onchange="atualizarStatus({{ pedido.id }}, this.value)">
+                            <option value="processo" {% if pedido.status == 'processo' %}selected{% endif %} 
+                                    class="bg-dark text-light">
+                                ⏳ Em Processo
+                            </option>
+                            <option value="caminho" {% if pedido.status == 'caminho' %}selected{% endif %}
+                                    class="bg-dark text-light">
+                                🚚 A Caminho
+                            </option>
+                            <option value="entregue" {% if pedido.status == 'entregue' %}selected{% endif %}
+                                    class="bg-dark text-light">
+                                ✅ Entregue
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Compartilhar WhatsApp -->
+                    <button class="btn btn-success" onclick="compartilharWhatsApp({{ pedido.id }})">
+                        <i class="bi bi-whatsapp me-2"></i>
+                        Compartilhar no WhatsApp
+                    </button>
+
+                    <!-- Editar Pedido -->
+                    <a href="{{ url_for('pedidos.editar_pedido', pedido_id=pedido.id) }}" 
+                       class="btn btn-outline-primary">
+                        <i class="bi bi-pencil me-2"></i>
+                        Editar Pedido
+                    </a>
+
+                    <!-- Voltar para Lista -->
+                    <a href="{{ url_for('pedidos.lista_pedidos') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-list-check me-2"></i>
+                        Ver Todos Pedidos
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card de Histórico de Entregas -->
+        <div class="card">
+            <div class="card-header bg-transparent d-flex align-items-center">
+                <i class="bi bi-truck me-2 text-primary"></i>
+                <h5 class="mb-0">Histórico de Entregas</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush bg-transparent">
+                    {% for entrega in pedido.entregas|sort(attribute='data_hora', reverse=true) %}
+                    <div class="list-group-item bg-transparent border-secondary">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-person-check text-success me-3 mt-1"></i>
+                            <div>
+                                <strong>{{ entrega.entregador.nome if entrega.entregador else 'Sistema' }}</strong>
+                                <p class="small text-muted mb-0">
+                                    <i class="bi bi-calendar3 me-1"></i> {{ entrega.data_hora.strftime('%d/%m/%Y') }}
+                                </p>
+                                <p class="small text-muted mb-0">
+                                    <i class="bi bi-clock me-1"></i> {{ entrega.data_hora.strftime('%H:%M:%S') }}
+                                </p>
+                                {% if entrega.observacao %}
+                                <p class="small mt-2 mb-0 text-info">
+                                    <i class="bi bi-chat me-1"></i> {{ entrega.observacao }}
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-truck fs-3 d-block mb-2"></i>
+                        <small>Nenhuma entrega registrada</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Card de Informações do Sistema -->
+        <div class="card mt-4">
+            <div class="card-header bg-transparent d-flex align-items-center">
+                <i class="bi bi-gear me-2 text-primary"></i>
+                <h5 class="mb-0">Informações do Sistema</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="small text-muted">ID do Pedido:</span>
+                    <span class="small">#{{ pedido.id }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="small text-muted">Código Acompanhamento:</span>
+                    <span class="small badge bg-secondary">{{ pedido.codigo_acompanhamento }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="small text-muted">Criado por:</span>
+                    <span class="small">{{ pedido.usuario_criador.nome if pedido.usuario_criador else 'Sistema' }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="small text-muted">Última atualização:</span>
+                    <span class="small">{{ pedido.data_atualizacao.strftime('%d/%m/%Y %H:%M') }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    /* Timeline personalizada */
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 12px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, 
+            rgba(13, 110, 253, 0.5) 0%,
+            rgba(255, 255, 255, 0.1) 100%);
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 30px;
+    }
+    
+    .timeline-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .timeline-icon {
+        position: absolute;
+        left: -30px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1rem;
+        z-index: 1;
+        box-shadow: 0 0 0 3px #1a1a2e;
+    }
+    
+    .timeline-item.completed .timeline-icon {
+        background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+    }
+    
+    .timeline-item.pending .timeline-icon {
+        background: #2a2a3a;
+        color: #666;
+    }
+    
+    .timeline-content {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 8px;
+        padding: 12px 15px;
+        border-left: 3px solid;
+    }
+    
+    .timeline-item.completed .timeline-content {
+        border-left-color: #0d6efd;
+    }
+    
+    .timeline-item.pending .timeline-content {
+        border-left-color: #2a2a3a;
+    }
+    
+    /* Cards responsivos */
+    .card {
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    /* Ajustes mobile */
+    @media (max-width: 768px) {
+        .timeline {
+            padding-left: 25px;
+        }
+        
+        .timeline-icon {
+            width: 32px;
+            height: 32px;
+            left: -25px;
+            font-size: 0.9rem;
+        }
+        
+        .timeline-content {
+            padding: 10px;
+        }
+        
+        .timeline-content h6 {
+            font-size: 0.9rem;
+        }
+        
+        .timeline-content small {
+            font-size: 0.75rem;
+        }
+    }
+    
+    /* Lista de entregas */
+    .list-group-item {
+        background-color: rgba(255, 255, 255, 0.02) !important;
+    }
+    
+    .list-group-item:hover {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+    }
+    
+    /* Botões */
+    .btn-outline-secondary {
+        border-color: #374151;
+    }
+    
+    .btn-outline-secondary:hover {
+        background-color: #374151;
+        border-color: #374151;
+    }
+    
+    /* Animações */
+    .card {
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<script>
+function compartilharWhatsApp(pedidoId) {
+    fetch(`/pedidos/whatsapp-link/${pedidoId}`)
+        .then(response => response.json())
+        .then(data => {
+           window.location.href = data.link; // 👈 MUDAR AQUI;
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao gerar link do WhatsApp');
+        });
+}
+
+function atualizarStatus(pedidoId, novoStatus) {
+    if (!confirm(`Deseja alterar o status para "${novoStatus}"?`)) {
+        // Reverte o select
+        event.target.value = '{{ pedido.status }}';
+        return;
+    }
+    
+    fetch(`/pedidos/status/${pedidoId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: novoStatus })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Status atualizado com sucesso!');
+            location.reload();
+        } else {
+            alert('Erro ao atualizar status');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao atualizar status');
+    });
+}
+</script>
+{% endblock %}

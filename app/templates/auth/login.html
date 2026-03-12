@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card fade-in">
+            <div class="card-body p-5">
+                <!-- Logo e título -->
+                <div class="text-center mb-4">
+                    <div class="display-1 mb-3">
+                        <i class="bi bi-droplet-half text-primary"></i>
+                        <i class="bi bi-fire text-warning"></i>
+                    </div>
+                    <h2 class="fw-bold">Água & Gás</h2>
+                    <p class="text-muted">Sistema de Gestão de Pedidos</p>
+                </div>
+
+                <!-- Mensagem de boas-vindas -->
+                <div class="text-center mb-4">
+                    <p class="lead">
+                        <i class="bi bi-shield-check"></i>
+                        Acesso rápido e seguro
+                    </p>
+                    <p class="small text-muted">
+                        Faça login com sua conta Google para gerenciar seus pedidos
+                    </p>
+                </div>
+
+                <!-- Botão de login Google -->
+                <div class="d-grid gap-3">
+                    <a href="{{ google_auth_url }}" class="btn btn-lg btn-outline-light">
+                        <i class="bi bi-google me-2"></i>
+                        Entrar com Google
+                    </a>
+                </div>
+
+                <!-- Recursos do sistema -->
+                <div class="row mt-5 pt-4 border-top border-secondary">
+                    <div class="col-4 text-center">
+                        <i class="bi bi-whatsapp text-success fs-4"></i>
+                        <p class="small mt-2">Compartilhe<br>no WhatsApp</p>
+                    </div>
+                    <div class="col-4 text-center">
+                        <i class="bi bi-truck text-info fs-4"></i>
+                        <p class="small mt-2">Acompanhe<br>entregas</p>
+                    </div>
+                    <div class="col-4 text-center">
+                        <i class="bi bi-cash-stack text-warning fs-4"></i>
+                        <p class="small mt-2">Controle<br>pagamentos</p>
+                    </div>
+                </div>
+
+                <!-- Dica de uso -->
+                <div class="alert alert-secondary mt-4 mb-0 small">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Dica: Use o mesmo email do WhatsApp para facilitar o compartilhamento dos pedidos!
+                </div>
+            </div>
+        </div>
+
+        <!-- Rodapé simples -->
+        <div class="text-center mt-4 text-muted small">
+            <p>© 2024 - Sistema de Gestão Água e Gás</p>
+            <p class="mb-0">
+                <i class="bi bi-phone"></i> Compatível com celular e computador
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Adiciona efeito de loading ao clicar no botão
+    document.querySelector('.btn-outline-light').addEventListener('click', function(e) {
+        const btn = e.target.closest('a');
+        if (btn) {
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Redirecionando para Google...';
+            btn.style.pointerEvents = 'none';
+        }
+    });
+</script>
+{% endblock %}

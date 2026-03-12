@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Água & Gás{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho da página -->
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+    <h1 class="h3 mb-0">
+        <i class="bi bi-grid-3x3-gap-fill me-2 text-primary"></i>
+        Dashboard
+    </h1>
+    <span class="text-muted small" id="data-atual"></span>
+</div>
+
+<!-- Cards de resumo - responsivos sem scroll -->
+<div class="row g-2 g-md-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card bg-warning bg-opacity-25 border-warning border-opacity-25">
+            <div class="card-body p-2 p-md-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="small text-warning text-uppercase d-block">Processo</span>
+                        <h3 class="mb-0 text-warning" id="contador-processo">0</h3>
+                    </div>
+                    <i class="bi bi-clock-history fs-1 text-warning opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-6 col-md-3">
+        <div class="card bg-info bg-opacity-25 border-info border-opacity-25">
+            <div class="card-body p-2 p-md-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="small text-info text-uppercase d-block">Caminho</span>
+                        <h3 class="mb-0 text-info" id="contador-caminho">0</h3>
+                    </div>
+                    <i class="bi bi-truck fs-1 text-info opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-6 col-md-3">
+        <div class="card bg-success bg-opacity-25 border-success border-opacity-25">
+            <div class="card-body p-2 p-md-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="small text-success text-uppercase d-block">Entregues</span>
+                        <h3 class="mb-0 text-success" id="contador-entregue">0</h3>
+                    </div>
+                    <i class="bi bi-check-circle fs-1 text-success opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-6 col-md-3">
+        <div class="card bg-primary bg-opacity-25 border-primary border-opacity-25">
+            <div class="card-body p-2 p-md-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="small text-primary text-uppercase d-block">Hoje</span>
+                        <h3 class="mb-0 text-primary" id="total-hoje">R$ 0</h3>
+                    </div>
+                    <i class="bi bi-cash-stack fs-1 text-primary opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botão novo pedido mobile -->
+<div class="d-grid d-md-none gap-2 mb-4">
+    <a href="{{ url_for('pedidos.novo_pedido') }}" class="btn btn-primary py-3">
+        <i class="bi bi-plus-circle me-2"></i>Novo Pedido
+    </a>
+</div>
+
+<!-- Últimos pedidos - sem scroll horizontal -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Últimos Pedidos
+                </h5>
+                <a href="{{ url_for('pedidos.lista_pedidos') }}" class="btn btn-sm btn-outline-light">
+                    Ver todos
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <!-- Lista em cards para mobile, tabela para desktop -->
+                <div class="d-md-none" id="lista-mobile-pedidos">
+                    <!-- Cards serão inseridos via JS -->
+                </div>
+                
+                <!-- Tabela para desktop (escondida no mobile) -->
+                <div class="d-none d-md-block">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 15%">Código</th>
+                                <th style="width: 25%">Cliente</th>
+                                <th style="width: 20%">Produto</th>
+                                <th style="width: 15%">Status</th>
+                                <th style="width: 15%">Data</th>
+                                <th style="width: 10%"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-ultimos-pedidos">
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                                    Carregando...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Mostra data atual
+document.getElementById('data-atual').textContent = new Date().toLocaleDateString('pt-BR', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+});
+
+// Carrega dados do dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    carregarResumo();
+    carregarPedidos();
+});
+
+// Função para carregar resumo
+function carregarResumo() {
+    fetch('/pedidos/api/resumo')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('contador-processo').textContent = data.processos || 0;
+            document.getElementById('contador-caminho').textContent = data.caminho || 0;
+            document.getElementById('contador-entregue').textContent = data.entregues || 0;
+            
+            const totalHoje = data.total_hoje || 0;
+            document.getElementById('total-hoje').textContent = 'R$ ' + totalHoje.toFixed(2).replace('.', ',');
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+        });
+}
+
+// Função para carregar pedidos
+function carregarPedidos() {
+    fetch('/pedidos/api/ultimos')
+        .then(response => response.json())
+        .then(pedidos => {
+            if (!pedidos || pedidos.length === 0) {
+                mostrarVazio();
+                return;
+            }
+            
+            // Atualiza tabela desktop
+            const tbody = document.getElementById('tabela-ultimos-pedidos');
+            tbody.innerHTML = '';
+            
+            // Atualiza cards mobile
+            const mobileContainer = document.getElementById('lista-mobile-pedidos');
+            mobileContainer.innerHTML = '';
+            
+            pedidos.forEach(pedido => {
+                // Define status
+                let statusClass = '';
+                let statusIcon = '';
+                let statusText = '';
+                
+                if (pedido.status === 'processo') {
+                    statusClass = 'warning';
+                    statusIcon = 'bi-clock';
+                    statusText = 'Processo';
+                } else if (pedido.status === 'caminho') {
+                    statusClass = 'info';
+                    statusIcon = 'bi-truck';
+                    statusText = 'Caminho';
+                } else {
+                    statusClass = 'success';
+                    statusIcon = 'bi-check-circle';
+                    statusText = 'Entregue';
+                }
+                
+                // Formata data
+                const data = new Date(pedido.data);
+                const dataFormatada = data.toLocaleDateString('pt-BR');
+                
+                // Adiciona linha na tabela desktop
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <a href="/pedidos/detalhe/${pedido.id}" class="text-decoration-none">
+                            <span class="badge bg-secondary">
+                                ${pedido.codigo || '---'}
+                            </span>
+                        </a>
+                    </td>
+                    <td>${pedido.cliente || '---'}</td>
+                    <td>${pedido.produto || '---'} (${pedido.volumes || 0}x)</td>
+                    <td>
+                        <span class="badge bg-${statusClass}">
+                            <i class="bi ${statusIcon} me-1"></i>
+                            ${statusText}
+                        </span>
+                    </td>
+                    <td><small>${dataFormatada}</small></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-success" 
+                                onclick="compartilharWhatsApp(${pedido.id})">
+                            <i class="bi bi-whatsapp"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+                
+                // Adiciona card mobile
+                const card = document.createElement('div');
+                card.className = 'card mb-2 border-secondary';
+                card.innerHTML = `
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <a href="/pedidos/detalhe/${pedido.id}" class="text-decoration-none">
+                                    <span class="badge bg-secondary px-3 py-2">
+                                        ${pedido.codigo || '---'}
+                                    </span>
+                                </a>
+                                <h6 class="mt-2 mb-1">${pedido.cliente || '---'}</h6>
+                                <small class="text-muted">${pedido.produto || '---'} - ${pedido.volumes || 0}x</small>
+                            </div>
+                            <span class="badge bg-${statusClass}">
+                                <i class="bi ${statusIcon} me-1"></i>
+                                ${statusText}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">${dataFormatada}</small>
+                            <button class="btn btn-sm btn-outline-success" 
+                                    onclick="compartilharWhatsApp(${pedido.id})">
+                                <i class="bi bi-whatsapp"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                mobileContainer.appendChild(card);
+            });
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            mostrarVazio();
+        });
+}
+
+// Mostra mensagem quando não há pedidos
+function mostrarVazio() {
+    document.getElementById('tabela-ultimos-pedidos').innerHTML = `
+        <tr>
+            <td colspan="6" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                Nenhum pedido encontrado
+            </td>
+        </tr>
+    `;
+    
+    document.getElementById('lista-mobile-pedidos').innerHTML = `
+        <div class="text-center py-4 text-muted">
+            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+            Nenhum pedido encontrado
+        </div>
+    `;
+}
+
+// Função para compartilhar WhatsApp
+function compartilharWhatsApp(pedidoId) {
+    fetch(`/pedidos/whatsapp-link/${pedidoId}`)
+        .then(response => response.json())
+        .then(data => {
+            window.location.href = data.link; // 👈 MUDAR AQUI);
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao gerar link do WhatsApp');
+        });
+}
+
+// Atualiza a cada 30 segundos
+setInterval(() => {
+    carregarResumo();
+    carregarPedidos();
+}, 30000);
+</script>
+{% endblock %}

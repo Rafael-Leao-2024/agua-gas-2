@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acompanhar Pedido - Água & Gás</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        .status-timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .status-item.completed {
+            opacity: 1;
+        }
+        
+        .status-item.active {
+            opacity: 1;
+            font-weight: bold;
+        }
+        
+        .status-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            background: #333;
+        }
+        
+        .status-item.completed .status-icon {
+            background: #198754;
+        }
+        
+        .status-item.active .status-icon {
+            background: #0d6efd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <h1>
+                        <i class="bi bi-droplet-half"></i> Água & Gás
+                    </h1>
+                    <p class="lead">Acompanhamento do Pedido</p>
+                </div>
+                
+                <!-- Card do pedido -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            Pedido #{{ pedido.codigo_acompanhamento }}
+                        </h5>
+                        <div onclick="" 
+                        class="btn btn-sm btn-outline-info mt-2">
+
+                        <i class="bi bi-volume-up"></i>
+                        Duplo Click Voz
+
+                    </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Cliente:</strong> {{ pedido.nome_cliente }}</p>
+                                <p><strong>Endereço:</strong> {{ pedido.endereco_cliente }}</p>
+                                <p><strong>Produto:</strong> {{ pedido.volumes }}x {{ pedido.produto }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Valor Total:</strong> R$ {{ "%.2f"|format(pedido.valor_total) }}</p>
+                                <p><strong>Forma Pagamento:</strong> {{ pedido.forma_pagamento }}</p>
+                                <p><strong>Status Pagamento:</strong> 
+                                    <span class="badge {% if pedido.status_pagamento == 'pago' %}bg-success{% else %}bg-warning{% endif %}">
+                                        {{ pedido.status_pagamento }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Timeline de status -->
+                        <div class="status-timeline mt-4">
+                            <div class="status-item {% if pedido.status in ['processo', 'caminho', 'entregue'] %}completed{% endif %} {% if pedido.status == 'processo' %}active{% endif %}">
+                                <div class="status-icon">
+                                    <i class="bi bi-clock"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Pedido em Processo</h6>
+                                    {% if pedido.data_processo %}
+                                        <small>{{ pedido.data_processo.strftime('%d/%m/%Y %H:%M') }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="status-item {% if pedido.status in ['caminho', 'entregue'] %}completed{% endif %} {% if pedido.status == 'caminho' %}active{% endif %}">
+                                <div class="status-icon">
+                                    <i class="bi bi-truck"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Pedido a Caminho</h6>
+                                    {% if pedido.data_caminho %}
+                                        <small>{{ pedido.data_caminho.strftime('%d/%m/%Y %H:%M') }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="status-item {% if pedido.status == 'entregue' %}completed active{% endif %}">
+                                <div class="status-icon">
+                                    <i class="bi bi-check-circle"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Pedido Entregue</h6>
+                                    {% if pedido.data_entrega %}
+                                        <small>{{ pedido.data_entrega.strftime('%d/%m/%Y %H:%M') }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Informações adicionais -->
+                <div class="card">
+                    <div class="card-body text-center">
+                        <p class="mb-2">Pedido realizado em: {{ pedido.data_criacao.strftime('%d/%m/%Y às %H:%M') }}</p>
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-info-circle"></i>
+                            Esta página é atualizada automaticamente pelo sistema
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Botão voltar -->
+                <div class="text-center mt-4">
+
+    {% if current_user.is_authenticated %}
+        <!-- Usuário logado -->
+        <a href="{{ url_for('pedidos.lista_pedidos') }}" class="btn btn-outline-light">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    {% else %}
+        <!-- Usuário deslogado -->
+        <button class="btn btn-outline-success" onclick="marcarRecebido('{{ pedido.id }}')">
+            <i class="bi bi-check-circle me-2"></i> Confirmar Recebimento
+        </button>
+    {% endif %}
+
+    </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Script para atualização automática -->
+    <script>
+        // Atualiza a página a cada 30 segundos
+        setTimeout(function() {
+            location.reload();
+        }, 15000);
+    </script>
+    
+    <!-- Usuário deslogado -->
+
+<script>
+function marcarRecebido(id_pedido) {
+    // Pede o código do pedido    
+    if (!id_pedido) return; // Cancelou
+    
+    // Mostra loading
+    const btn = event.target.closest('button');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Confirmando...';
+    btn.disabled = true;
+    
+    // Faz a requisição
+    fetch(`/pedidos/marcar-recebido/${id_pedido}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ Pedido marcado como recebido com sucesso!');
+        } else {
+            alert('❌ ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('❌ Erro ao confirmar recebimento. Tente novamente.');
+    })
+    .finally(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+</script>
+
+<script>
+
+function falarMensagem() {
+
+    const nome = "{{ pedido.nome_cliente }}";
+    const status = "{{ pedido.status }}";
+
+    let texto = "";
+
+    if (status === "processo") {
+
+        texto = `Olá ${nome}. Seu pedido está sendo preparado neste momento. Em breve ele sairá para entrega.`;
+
+    }
+
+    else if (status === "caminho") {
+
+        texto = `Olá ${nome}. Seu pedido já está a caminho. Por favor fique atento, e quando receber marque como recebido na página.`;
+
+    }
+
+    else if (status === "entregue") {
+
+        texto = `Olá ${nome}. Seu pedido foi entregue com sucesso. Muito obrigado pela preferência.`;
+
+    }
+
+    const msg = new SpeechSynthesisUtterance(texto);
+
+    msg.lang = "pt-BR";
+    msg.rate = 1;
+    msg.pitch = 1;
+
+    speechSynthesis.speak(msg);
+
+}
+
+
+// executa quando carregar
+window.addEventListener("load", function(){
+
+    setTimeout(() => {
+        falarMensagem()
+    }, 15000)
+
+})
+
+</script>
+
+</body>
+</html>
