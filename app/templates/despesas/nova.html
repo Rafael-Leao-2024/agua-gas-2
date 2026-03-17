@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Despesa - Água & Gás{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho -->
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('despesas.dashboard') }}" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h1 class="h3 mb-0">
+        <i class="bi bi-plus-circle text-danger me-2"></i>
+        Nova Despesa
+    </h1>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-body p-4">
+                <form method="POST">
+                    <!-- Descrição -->
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">Descrição</label>
+                        <input type="text" class="form-control" name="descricao" 
+                               placeholder="Ex: Compra de gás para estoque" required>
+                    </div>
+                    
+                    <!-- Valor e Categoria -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Valor (R$)</label>
+                            <input type="number" step="0.01" class="form-control" name="valor" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Categoria</label>
+                            <select class="form-select bg-dark text-light" name="categoria" required>
+                                <option value="" class="bg-dark text-light">Selecione...</option>
+                                <option value="Água" class="bg-dark text-light">💧 Água</option>
+                                <option value="Gás" class="bg-dark text-light">🔥 Gás</option>
+                                <option value="Transporte" class="bg-dark text-light">🚚 Transporte</option>
+                                <option value="Manutenção" class="bg-dark text-light">🔧 Manutenção</option>
+                                <option value="Aluguel" class="bg-dark text-light">🏠 Aluguel</option>
+                                <option value="Salário" class="bg-dark text-light">👤 Salário</option>
+                                <option value="Impostos" class="bg-dark text-light">📄 Impostos</option>
+                                <option value="Outros" class="bg-dark text-light">📦 Outros</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Data e Forma Pagamento -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Data</label>
+                            <input type="date" class="form-control" name="data" 
+                                   value="{{ datetime.now().strftime('%Y-%m-%d') }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Forma Pagamento</label>
+                            <select class="form-select bg-dark text-light" name="forma_pagamento" required>
+                                <option value="Dinheiro" class="bg-dark text-light">💵 Dinheiro</option>
+                                <option value="Cartão" class="bg-dark text-light">💳 Cartão</option>
+                                <option value="PIX" class="bg-dark text-light">📱 PIX</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Observação -->
+                    <div class="mb-4">
+                        <label class="form-label small text-muted">Observação (opcional)</label>
+                        <textarea class="form-control" name="observacao" rows="2"></textarea>
+                    </div>
+                    
+                    <!-- Botões -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('despesas.dashboard') }}" class="btn btn-outline-secondary">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-save me-1"></i> Salvar Despesa
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    select.form-select option {
+        background-color: #1a1a2e !important;
+        color: #fff !important;
+    }
+    
+    @media (max-width: 576px) {
+        input, select {
+            font-size: 16px !important;
+        }
+    }
+</style>
+{% endblock %}

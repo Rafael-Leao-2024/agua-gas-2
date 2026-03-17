@@ -79,3 +79,26 @@ class Entrega(db.Model):
     
     def __repr__(self):
         return f'<Entrega {self.pedido_id} - {self.data_hora}>'
+    
+
+
+class Despesa(db.Model):
+
+    __tablename__ = "despesas"
+
+    id = db.Column(db.Integer, primary_key=True)
+    descricao = db.Column(db.String(200), nullable=False)
+    valor = db.Column(db.Float, nullable=False)
+    categoria = db.Column(db.String(50), nullable=False)
+
+    data = db.Column(db.DateTime, default=agora_brasil)
+    forma_pagamento = db.Column(db.String(50), nullable=False)
+    observacao = db.Column(db.String(200))
+
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+
+    usuario = db.relationship("Usuario", backref="despesas")
+
+    def __repr__(self):
+        return f'<Despesa {self.descricao}> - R$ {self.valor}'
+

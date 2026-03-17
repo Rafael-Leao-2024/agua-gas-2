@@ -23,10 +23,12 @@ def create_app(config_class=Config):
     from app.blueprints.pedidos import pedidos_bp
     from app.blueprints.main import main_bp
     from app.blueprints.financas import financas_bp
+    from app.blueprints.despesas import despesas_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(pedidos_bp, url_prefix='/pedidos')
     app.register_blueprint(main_bp)
     app.register_blueprint(financas_bp)
-        
+    app.register_blueprint(despesas_bp)
+    
     return app

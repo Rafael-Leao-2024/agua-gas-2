@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required
 from app.models import Pedido, db
 from datetime import datetime
-from sqlalchemy import func, extract
+from sqlalchemy import func, extract, case
 from app.models import agora_brasil
 
 
@@ -234,27 +234,29 @@ def marcar_pago(pedido_id):
 @login_required
 def api_pedidos_por_mes():
     """Pedidos de um mês específico"""
-    mes = request.args.get('mes', type=int)
-    ano = request.args.get('ano', type=int)
+    mes = request.args.get('mes', agora_brasil().month, type=int)
+    ano = request.args.get('ano', agora_brasil().year, type=int)
     
-    if not mes or not ano:
-        hoje = agora_brasil()
-        mes = hoje.month
-        ano = hoje.year
-    
+    # 1. Busca os TOTAIS primeiro (Processamento em milissegundos no Banco)
+    totais = db.session.query(
+        func.sum(Pedido.valor_total).label('total'),
+        func.sum(case((Pedido.status_pagamento == 'pago', Pedido.valor_total), else_=0)).label('pagos'),
+        func.sum(case((Pedido.status_pagamento == 'pendente', Pedido.valor_total), else_=0)).label('pendentes')
+    ).filter(
+        extract('month', Pedido.data_criacao) == mes,
+        extract('year', Pedido.data_criacao) == ano
+    ).first()
+
+    # 2. Busca os pedidos (Aqui está o segredo: traga apenas o necessário)
     pedidos = Pedido.query.filter(
         extract('month', Pedido.data_criacao) == mes,
         extract('year', Pedido.data_criacao) == ano
-    ).order_by(Pedido.data_criacao).all()
-    
-    total = sum(p.valor_total for p in pedidos)
-    pagos = sum(p.valor_total for p in pedidos if p.status_pagamento == 'pago')
-    pendentes = sum(p.valor_total for p in pedidos if p.status_pagamento == 'pendente')
-    
+    ).order_by(Pedido.data_criacao.desc()).all() # .limit(500) se quiser ser ainda mais rápido
+
     return jsonify({
-        'total': float(total),
-        'pagos': float(pagos),
-        'pendentes': float(pendentes),
+        'total': float(totais.total or 0),
+        'pagos': float(totais.pagos or 0),
+        'pendentes': float(totais.pendentes or 0),
         'pedidos': [{
             'id': p.id,
             'cliente': p.nome_cliente,
@@ -266,3 +268,88 @@ def api_pedidos_por_mes():
             'status_pagamento': p.status_pagamento
         } for p in pedidos]
     })
+
+# dias especificos
+@financas_bp.route('/faturamento-diario')
+@login_required
+def faturamento_diario():
+    """Página de faturamento com visualização por dia"""
+    return render_template('financas/faturamento_diario.html', datetime=agora_brasil())
+
+@financas_bp.route('/api/faturamento-diario')
+@login_required
+def api_faturamento_diario():
+    """API para faturamento de um dia específico"""
+    data = request.args.get('data')
+
+    if not data:
+        data = agora_brasil().strftime('%Y-%m-%d')
+    
+    try:
+        data_obj = datetime.strptime(data, '%Y-%m-%d')
+        data_inicio = data_obj.replace(hour=0, minute=0, second=0)
+        data_fim = data_obj.replace(hour=23, minute=59, second=59)
+    except:
+        return jsonify({'error': 'Data inválida'}), 400
+    
+    # Pedidos do dia
+    pedidos = Pedido.query.filter(
+        Pedido.data_criacao >= data_inicio,
+        Pedido.data_criacao <= data_fim
+    ).order_by(Pedido.data_criacao).all()
+    
+    # Totais
+    total_dia = sum(p.valor_total for p in pedidos)
+    total_pago = sum(p.valor_total for p in pedidos if p.status_pagamento == 'pago')
+    total_pendente = sum(p.valor_total for p in pedidos if p.status_pagamento == 'pendente')
+    
+    # Por forma de pagamento
+    formas = {}
+    for p in pedidos:
+        if p.forma_pagamento not in formas:
+            formas[p.forma_pagamento] = 0
+        formas[p.forma_pagamento] += p.valor_total
+    
+    return jsonify({
+        'data': data_obj.strftime('%d/%m/%Y'),
+        'total_dia': float(total_dia),
+        'total_pago': float(total_pago),
+        'total_pendente': float(total_pendente),
+        'qtd_pedidos': len(pedidos),
+        'qtd_pagos': len([p for p in pedidos if p.status_pagamento == 'pago']),
+        'qtd_pendentes': len([p for p in pedidos if p.status_pagamento == 'pendente']),
+        'formas_pagamento': [{'forma': k, 'total': float(v)} for k, v in formas.items()],
+        'pedidos': [{
+            'id': p.id,
+            'codigo': p.codigo_acompanhamento,
+            'cliente': p.nome_cliente,
+            'produto': p.produto,
+            'volumes': p.volumes,
+            'valor': float(p.valor_total),
+            'hora': p.data_criacao.strftime('%H:%M'),
+            'forma_pagamento': p.forma_pagamento,
+            'status_pagamento': p.status_pagamento,
+            'status': p.status,
+        } for p in pedidos]
+    })
+
+@financas_bp.route('/api/meses-disponiveis')
+@login_required
+def api_meses_disponiveis():
+    """Lista meses com pedidos"""
+    from sqlalchemy import extract
+    
+    meses = db.session.query(
+        extract('year', Pedido.data_criacao).label('ano'),
+        extract('month', Pedido.data_criacao).label('mes')
+    ).distinct().order_by('ano', 'mes').all()
+    
+    meses_list = []
+    for ano, mes in meses:
+        meses_list.append({
+            'ano': int(ano),
+            'mes': int(mes),
+            'nome': f"{mes:02d}/{ano}"
+        })
+    
+    return jsonify(meses_list)

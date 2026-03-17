@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Despesa - Água & Gás{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho -->
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('despesas.lista') }}" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h1 class="h3 mb-0">
+        <i class="bi bi-pencil-square text-danger me-2"></i>
+        Editar Despesa
+    </h1>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">Descrição</label>
+                        <input type="text" class="form-control" name="descricao" 
+                               value="{{ despesa.descricao }}" required>
+                    </div>
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Valor (R$)</label>
+                            <input type="number" step="0.01" class="form-control" name="valor" 
+                                   value="{{ despesa.valor }}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Categoria</label>
+                            <select class="form-select bg-dark text-light" name="categoria" required>
+                                <option value="Água" {% if despesa.categoria == 'Água' %}selected{% endif %}>💧 Água</option>
+                                <option value="Gás" {% if despesa.categoria == 'Gás' %}selected{% endif %}>🔥 Gás</option>
+                                <option value="Transporte" {% if despesa.categoria == 'Transporte' %}selected{% endif %}>🚚 Transporte</option>
+                                <option value="Manutenção" {% if despesa.categoria == 'Manutenção' %}selected{% endif %}>🔧 Manutenção</option>
+                                <option value="Aluguel" {% if despesa.categoria == 'Aluguel' %}selected{% endif %}>🏠 Aluguel</option>
+                                <option value="Salário" {% if despesa.categoria == 'Salário' %}selected{% endif %}>👤 Salário</option>
+                                <option value="Impostos" {% if despesa.categoria == 'Impostos' %}selected{% endif %}>📄 Impostos</option>
+                                <option value="Outros" {% if despesa.categoria == 'Outros' %}selected{% endif %}>📦 Outros</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Data</label>
+                            <input type="date" class="form-control" name="data" 
+                                   value="{{ despesa.data.strftime('%Y-%m-%d') }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Forma Pagamento</label>
+                            <select class="form-select bg-dark text-light" name="forma_pagamento" required>
+                                <option value="Dinheiro" {% if despesa.forma_pagamento == 'Dinheiro' %}selected{% endif %}>💵 Dinheiro</option>
+                                <option value="Cartão" {% if despesa.forma_pagamento == 'Cartão' %}selected{% endif %}>💳 Cartão</option>
+                                <option value="PIX" {% if despesa.forma_pagamento == 'PIX' %}selected{% endif %}>📱 PIX</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label small text-muted">Observação</label>
+                        <textarea class="form-control" name="observacao" rows="2">{{ despesa.observacao }}</textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('despesas.lista') }}" class="btn btn-outline-secondary">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-save me-1"></i> Atualizar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

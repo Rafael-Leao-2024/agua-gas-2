@@ -19,13 +19,13 @@ def gerar_codigo_acompanhamento():
 @login_required
 def lista_pedidos():
     """Lista todos os pedidos"""
-    status = request.args.get('status', 'todos')
+    status = request.args.get('status', 'processo')
     
     if status == 'todos':
-        pedidos = Pedido.query.order_by(Pedido.data_criacao.desc()).all()[:100]
+        pedidos = Pedido.query.order_by(Pedido.data_criacao.desc()).all()[:1500]
 
     elif status == "entregue":
-        hoje = datetime.now().date()
+        hoje = agora_brasil().date()
         pedidos = Pedido.query.filter(
             Pedido.status == 'entregue',
             db.func.date(Pedido.data_entrega) == hoje
@@ -229,6 +229,7 @@ def editar_pagamento(pedido_id):
     pedido = Pedido.query.get_or_404(pedido_id)
     return render_template('pedidos/editar_pagamento.html', pedido=pedido)
 
+
 @pedidos_bp.route('/atualizar-pagamento/<int:pedido_id>', methods=['POST'])
 @login_required
 def atualizar_pagamento(pedido_id):
@@ -278,7 +279,7 @@ def buscar_enderecos():
         Pedido.query
         .filter(Pedido.endereco_cliente.ilike(f"%{termo}%"))
         .distinct()
-        .limit(5)
+        .limit(4)
         .all()
     )
 
@@ -299,7 +300,7 @@ def buscar_clientes():
         Pedido.query
         .filter(Pedido.nome_cliente.ilike(f"%{termo}%"))
         .distinct()
-        .limit(4)
+        .limit(2)
         .all()
     )
 
@@ -345,3 +346,6 @@ def marcar_recebido(id_pedido):
         
     except Exception as e:
         return jsonify({'success': False, 'message': 'Erro ao confirmar recebimento'}), 500
+
+
+

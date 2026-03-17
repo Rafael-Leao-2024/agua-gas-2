@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Despesas - Água & Gás{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho -->
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+    <h1 class="h3 mb-0">
+        <i class="bi bi-list-check text-danger me-2"></i>
+        Despesas
+    </h1>
+    
+    <div class="d-flex gap-2">
+        <div class="btn-group">
+            <button class="btn btn-sm btn-outline-secondary active" onclick="filtrar('hoje')" id="btn-hoje">Hoje</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="filtrar('mes')" id="btn-mes">Mês</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="filtrar('todos')" id="btn-todos">Todos</button>
+        </div>
+        <a href="{{ url_for('despesas.nova_despesa') }}" class="btn btn-danger btn-sm">
+            <i class="bi bi-plus-circle"></i>
+        </a>
+    </div>
+</div>
+
+<!-- Cards mobile -->
+<div class="d-md-none" id="cards-container"></div>
+
+<!-- Tabela desktop -->
+<div class="d-none d-md-block">
+    <div class="card">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                        <th>Categoria</th>
+                        <th>Pagamento</th>
+                        <th class="text-end">Valor</th>
+                        <th style="width: 100px"></th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-container">
+                    <tr>
+                        <td colspan="6" class="text-center py-4">Carregando...</td>
+                    </tr>
+                </tbody>
+                <tfoot class="table-dark">
+                    <tr>
+                        <td colspan="4" class="text-end"><strong>Total:</strong></td>
+                        <td class="text-end"><strong id="total-lista">R$ 0,00</strong></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let filtroAtual = 'mes';
+
+function filtrar(tipo) {
+    filtroAtual = tipo;
+    
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.getElementById(`btn-${tipo}`).classList.add('active');
+    
+    carregarLista();
+}
+
+function carregarLista() {
+    fetch(`/despesas/api/lista?filtro=${filtroAtual}`)
+        .then(response => response.json())
+        .then(despesas => {
+            const tabela = document.getElementById('tabela-container');
+            const cards = document.getElementById('cards-container');
+            let total = 0;
+            
+            tabela.innerHTML = '';
+            cards.innerHTML = '';
+            
+            if (despesas.length === 0) {
+                tabela.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Nenhuma despesa</td></tr>';
+                cards.innerHTML = '<div class="text-center py-4 text-muted">Nenhuma despesa</div>';
+                document.getElementById('total-lista').textContent = 'R$ 0,00';
+                return;
+            }
+            
+            despesas.forEach(d => {
+                total += d.valor;
+                
+                // Linha tabela
+                tabela.innerHTML += `
+                    <tr>
+                        <td><small>${d.data}</small></td>
+                        <td>${d.descricao}</td>
+                        <td><span class="badge bg-secondary">${d.categoria}</span></td>
+                        <td><small>${d.forma_pagamento}</small></td>
+                        <td class="text-end text-danger">R$ ${d.valor.toFixed(2).replace('.', ',')}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="/despesas/editar/${d.id}" class="btn btn-outline-primary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button class="btn btn-outline-danger" onclick="excluir(${d.id})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                
+                // Card mobile
+                cards.innerHTML += `
+                    <div class="card mb-2 border-danger">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between">
+                                <span class="badge bg-secondary">${d.data}</span>
+                                <strong class="text-danger">R$ ${d.valor.toFixed(2).replace('.', ',')}</strong>
+                            </div>
+                            <h6 class="mt-2">${d.descricao}</h6>
+                            <small class="text-muted d-block">${d.categoria} - ${d.forma_pagamento}</small>
+                            <div class="d-flex gap-2 mt-2">
+                                <a href="/despesas/editar/${d.id}" class="btn btn-sm btn-outline-primary flex-grow-1">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger" onclick="excluir(${d.id})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('total-lista').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+        });
+}
+
+function excluir(id) {
+    if (confirm('Excluir esta despesa?')) {
+        fetch(`/despesas/excluir/${id}`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    carregarLista();
+                } else {
+                    alert('Erro ao excluir');
+                }
+            });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => carregarLista());
+</script>
+{% endblock %}
